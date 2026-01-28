@@ -36,4 +36,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Check if phone number exists
      */
     boolean existsByPhone(String phone);
+
+    /**
+     * Find user by email specifically for authentication verification
+     */
+    Optional<User> findByEmailAndStatus(String email, String status);
 }

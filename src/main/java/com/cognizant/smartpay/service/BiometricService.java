@@ -1,11 +1,10 @@
 package com.cognizant.smartpay.service;
 
-//import com.cognizant.smartpay.dto.EnrollmentRequest;
-//import com.cognizant.smartpay.dto.EnrollmentResponse;
+import com.cognizant.smartpay.dto.EnrollmentRequest;
+import com.cognizant.smartpay.dto.EnrollmentResponse;
 import com.cognizant.smartpay.dto.FingerprintAuthRequest;
 import com.cognizant.smartpay.entity.Biometric;
 import com.cognizant.smartpay.entity.User;
-import com.cognizant.smartpay.entity.Wallet;
 import com.cognizant.smartpay.exception.AuthenticationFailedException;
 import com.cognizant.smartpay.exception.BiometricNotFoundException;
 import com.cognizant.smartpay.repository.BiometricRepository;
@@ -16,12 +15,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import com.cognizant.smartpay.entity.Wallet;
 
 /**
  * Service for biometric authentication operations
@@ -29,12 +30,12 @@ import java.util.Optional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-
 public class BiometricService {
 
     private final BiometricRepository biometricRepository;
     private final UserRepository userRepository;
     private final WalletRepository walletRepository;
+
 
     /**
      * Authenticate user using fingerprint data
@@ -61,9 +62,6 @@ public class BiometricService {
             throw new AuthenticationFailedException("Authentication failed. User not found or disabled.");
         }
 
-        // Get wallet balance
-        Optional<Wallet> walletOpt = walletRepository.findByUserId(user.getUserId());
-        walletOpt.ifPresent(wallet -> user.setWalletBalance(wallet.getBalance()));
 
         log.info("User authenticated successfully: {}", user.getEmail());
         return user;
@@ -226,69 +224,69 @@ public class BiometricService {
     /**
      * Enroll new fingerprint
      */
-//    @Transactional
-//    public EnrollmentResponse enrollFingerprint(EnrollmentRequest request) {
-//        log.debug("Enrolling fingerprint for user: {}", request.getUserId());
-//
-//        // Verify user exists
-//        User user = userRepository.findById(request.getUserId())
-//            .orElseThrow(() -> new BiometricNotFoundException("User not found"));
-//
-//        Map<String, Object> fingerprintData = request.getFingerprintData();
-//        Map<String, Object> deviceInfo = request.getDeviceInfo();
+    @Transactional
+    public EnrollmentResponse enrollFingerprint(EnrollmentRequest request) {
+        log.debug("Enrolling fingerprint for user: {}", request.getUserId());
 
-//        Biometric biometric = new Biometric();
-//        biometric.setUserId(user.getUserId());
-//        biometric.setDeviceType((String) deviceInfo.get("deviceType"));
-//        biometric.setEnrollmentMethod((String) deviceInfo.get("method"));
-//
-//        String method = (String) deviceInfo.get("method");
-//
-//        if ("webauthn".equals(method)) {
-//            // Store WebAuthn credential
-//            String credentialId = (String) fingerprintData.get("credentialId");
-//            String publicKeyB64 = (String) fingerprintData.get("publicKey");
-//
-//            biometric.setCredentialId(credentialId);
-//
-//            if (publicKeyB64 != null) {
-//                biometric.setPublicKey(Base64.getDecoder().decode(publicKeyB64));
-//            }
-//
-//            // Generate hash
-//            biometric.setFingerprintHash(generateHash(credentialId));
-//
-//            // Store dummy template for WebAuthn
-//            biometric.setFingerprintTemplate(new byte[0]);
-//
-//        } else if ("external_usb".equals(method)) {
-//            // Store fingerprint template
-//            String templateB64 = (String) fingerprintData.get("fingerprintTemplate");
-//            byte[] template = Base64.getDecoder().decode(templateB64);
-//
-//            biometric.setFingerprintTemplate(template);
-//            biometric.setFingerprintHash(generateHash(templateB64));
-//        }
-//
-//        biometric.setIsActive(true);
-//        biometric.setVerificationCount(0);
-//        biometric.setEnrolledAt(LocalDateTime.now());
-//
-//        biometric = biometricRepository.save(biometric);
-//
-//        // Update user biometric status
-//        user.setBiometricEnabled(true);
-//        userRepository.save(user);
-//
-//        log.info("Fingerprint enrolled successfully for user: {}", user.getEmail());
-//
-//        return new EnrollmentResponse(
-//            biometric.getBiometricId(),
-//            "Fingerprint enrolled successfully",
-//            biometric.getDeviceType(),
-//            true
-//        );
-//    }
+        // Verify user exists
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new BiometricNotFoundException("User not found"));
+
+        Map<String, Object> fingerprintData = request.getFingerprintData();
+        Map<String, Object> deviceInfo = request.getDeviceInfo();
+
+        Biometric biometric = new Biometric();
+        biometric.setUserId(user.getUserId());
+        biometric.setDeviceType((String) deviceInfo.get("deviceType"));
+        biometric.setEnrollmentMethod((String) deviceInfo.get("method"));
+
+        String method = (String) deviceInfo.get("method");
+
+        if ("webauthn".equals(method)) {
+            // Store WebAuthn credential
+            String credentialId = (String) fingerprintData.get("credentialId");
+            String publicKeyB64 = (String) fingerprintData.get("publicKey");
+
+            biometric.setCredentialId(credentialId);
+
+            if (publicKeyB64 != null) {
+                biometric.setPublicKey(Base64.getDecoder().decode(publicKeyB64));
+            }
+
+            // Generate hash
+            biometric.setFingerprintHash(generateHash(credentialId));
+
+            // Store dummy template for WebAuthn
+            biometric.setFingerprintTemplate(new byte[0]);
+
+        } else if ("external_usb".equals(method)) {
+            // Store fingerprint template
+            String templateB64 = (String) fingerprintData.get("fingerprintTemplate");
+            byte[] template = Base64.getDecoder().decode(templateB64);
+
+            biometric.setFingerprintTemplate(template);
+            biometric.setFingerprintHash(generateHash(templateB64));
+        }
+
+        biometric.setIsActive(true);
+        biometric.setVerificationCount(0);
+        biometric.setEnrolledAt(LocalDateTime.now());
+
+        biometric = biometricRepository.save(biometric);
+
+        // Update user biometric status
+        user.setBiometricEnabled(true);
+        userRepository.save(user);
+
+        log.info("Fingerprint enrolled successfully for user: {}", user.getEmail());
+
+        return new EnrollmentResponse(
+                biometric.getBiometricId(),
+                "Fingerprint enrolled successfully",
+                biometric.getDeviceType(),
+                true
+        );
+    }
 
     /**
      * Register new user with biometric enrollment
@@ -314,6 +312,11 @@ public class BiometricService {
         // Create new user
         User user = new User();
         user.setName(request.getName());
+        // --- Added new fields below ---
+        user.setLastName(request.getLastName());
+        user.setDob(request.getDob());
+        user.setPassword(request.getPassword());
+        // ------------------------------
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setBiometricEnabled(false); // Will be set to true after biometric enrollment
@@ -325,15 +328,14 @@ public class BiometricService {
         user = userRepository.save(user);
         log.info("User created with ID: {}", user.getUserId());
 
-        // Create wallet
-        Wallet wallet = new Wallet();
-        wallet.setUserId(user.getUserId());
-        wallet.setBalance(request.getInitialWalletBalance());
-        wallet.setCreatedAt(LocalDateTime.now());
-        wallet.setUpdatedAt(LocalDateTime.now());
+//        Wallet wallet = new Wallet();
+//        wallet.setUserId(user.getUserId());
+//        wallet.setBalance(request.getInitialWalletBalance());
+//        wallet.setCreatedAt(LocalDateTime.now());
+//        wallet.setUpdatedAt(LocalDateTime.now());
 
-        walletRepository.save(wallet);
-        log.info("Wallet created for user: {}", user.getUserId());
+//        walletRepository.save(wallet);
+//        log.info("Wallet created for user: {}", user.getUserId());
 
         // Enroll biometric
         try {
@@ -388,8 +390,8 @@ public class BiometricService {
             throw new RuntimeException("Failed to enroll biometric: " + e.getMessage());
         }
 
-        // Set wallet balance in user object
-        user.setWalletBalance(request.getInitialWalletBalance());
+//        // Set wallet balance in user object
+//        user.setWalletBalance(request.getInitialWalletBalance());
 
         log.info("User registration completed successfully for: {}", user.getEmail());
         return user;
@@ -425,6 +427,22 @@ public class BiometricService {
         } catch (Exception e) {
             log.error("Error generating hash", e);
             return null;
+        }
+
+
+    }
+    private void createWalletForUser(Long userId, BigDecimal initialBalance) {
+        try {
+            Wallet wallet = new Wallet();
+            wallet.setUserId(userId);
+            wallet.setBalance(initialBalance != null ? initialBalance : BigDecimal.ZERO);
+            wallet.setCurrency("INR");
+            wallet.setCreatedAt(LocalDateTime.now());
+            wallet.setUpdatedAt(LocalDateTime.now());
+            walletRepository.save(wallet);
+            log.info("Wallet created for user: {} with balance: {}", userId, wallet.getBalance());
+        } catch (Exception e) {
+            log.error("Failed to create wallet for user: {}", userId, e);
         }
     }
 }

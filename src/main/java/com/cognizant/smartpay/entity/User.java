@@ -32,6 +32,15 @@ public class User {
     @Column(name = "phone", length = 15)
     private String phone;
 
+    @Column(name = "last_name", length = 100)
+    private String lastName;
+
+    @Column(name = "dob", length = 20)
+    private String dob;
+
+    @Column(name = "password", nullable = false)
+    private String password;
+
     @Column(name = "biometric_enabled", nullable = false)
     private Boolean biometricEnabled = false;
 

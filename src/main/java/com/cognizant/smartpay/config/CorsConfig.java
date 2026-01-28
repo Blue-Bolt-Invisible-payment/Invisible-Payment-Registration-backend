@@ -10,46 +10,50 @@ import org.springframework.web.filter.CorsFilter;
 import java.util.Arrays;
 
 /**
- * CORS Configuration for allowing frontend requests
+ * CORS Configuration for allowing frontend requests.
+ * Default values are provided after the ':' to prevent application crashes.
  */
 @Configuration
 public class CorsConfig {
 
-    @Value("${cors.allowed-origins}")
+    @Value("${cors.allowed-origins:*}")
     private String allowedOrigins;
 
-    @Value("${cors.allowed-methods}")
+    @Value("${cors.allowed-methods:GET,POST,PUT,DELETE,OPTIONS}")
     private String allowedMethods;
 
-    @Value("${cors.allowed-headers}")
+    @Value("${cors.allowed-headers:*}")
     private String allowedHeaders;
 
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
-        
-        // Allow specific origins
+
+        // 1. Set Allowed Origins
+        // split(",") handles multiple origins if provided in properties
         config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
-        
-        // Allow specific methods
+
+        // 2. Set Allowed Methods
         config.setAllowedMethods(Arrays.asList(allowedMethods.split(",")));
-        
-        // Allow all headers
+
+        // 3. Set Allowed Headers
         if ("*".equals(allowedHeaders)) {
             config.addAllowedHeader("*");
         } else {
             config.setAllowedHeaders(Arrays.asList(allowedHeaders.split(",")));
         }
-        
-        // Allow credentials
+
+        // 4. Set Credentials
+        // Note: If origins is "*", allowCredentials must be false in some Spring versions.
+        // If testing on localhost, this is usually fine.
         config.setAllowCredentials(true);
-        
-        // Max age
+
+        // 5. Max age for browser caching of the CORS pre-flight request
         config.setMaxAge(3600L);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        
+
         return new CorsFilter(source);
     }
 }

@@ -13,7 +13,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/payment")
-@CrossOrigin(origins = "http://localhost:3001")
+@CrossOrigin(origins = "http://localhost:8081")
 @Slf4j
 @RequiredArgsConstructor
 public class PaymentController {

@@ -20,7 +20,9 @@ public class RegistrationResponse {
     private String name;
     private String email;
     private String phone;
-    private BigDecimal walletBalance;
+    private String lastName;
+    private String dob;
+//    private BigDecimal walletBalance;
     private Boolean biometricEnabled;
     private String status;
     private String message;

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3001")
+@CrossOrigin(origins = "http://localhost:8081")
 
 @RequiredArgsConstructor
 //@Slf4j
@@ -83,9 +83,13 @@ public class BiometricAuthController {
             com.cognizant.smartpay.dto.RegistrationResponse response = com.cognizant.smartpay.dto.RegistrationResponse.builder()
                     .userId(user.getUserId())
                     .name(user.getName())
+                    // --- ADDED NEW FIELDS HERE ---
+                    .lastName(user.getLastName())
+                    .dob(user.getDob())
+                    // ------------------------------
                     .email(user.getEmail())
                     .phone(user.getPhone())
-                    .walletBalance(user.getWalletBalance())
+//                    .walletBalance(user.getWalletBalance())
                     .biometricEnabled(user.getBiometricEnabled())
                     .status(user.getStatus())
                     .message("User registered successfully")
@@ -135,9 +139,13 @@ public class BiometricAuthController {
         UserDTO dto = new UserDTO();
         dto.setId(user.getUserId());
         dto.setName(user.getName());
+        // --- ADDED NEW FIELDS HERE ---
+        dto.setLastName(user.getLastName());
+        dto.setDob(user.getDob());
+        // ------------------------------
         dto.setEmail(user.getEmail());
         dto.setPhone(user.getPhone());
-        dto.setWalletBalance(user.getWalletBalance());
+//        dto.setWalletBalance(user.getWalletBalance());
         dto.setBiometricEnabled(user.getBiometricEnabled());
         dto.setEnabled(user.getEnabled());
         dto.setStatus(user.getStatus());

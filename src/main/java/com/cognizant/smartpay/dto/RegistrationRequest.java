@@ -20,6 +20,16 @@ public class RegistrationRequest {
     @Email(message = "Invalid email format")
     @Size(max = 255, message = "Email must not exceed 255 characters")
     private String email;
+
+    @NotBlank(message = "Last name is required")
+    private String lastName;
+
+    @NotBlank(message = "Date of birth is required")
+    private String dob;
+
+    @NotBlank(message = "Password is required")
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    private String password;
     
     @Size(max = 15, message = "Phone must not exceed 15 characters")
     private String phone;
