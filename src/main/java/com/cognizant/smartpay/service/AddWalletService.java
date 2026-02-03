@@ -187,5 +187,12 @@ public class AddWalletService {
         return BigDecimal.ZERO;
 
     }
+    /**
+     * Find wallet by User ID
+     */
+    public Optional<Wallet> findByUserId(Long userId) {
+        // Assuming your repository has findByUserId or similar
+        return walletRepository.findByUserId(userId);
+    }
 
 }

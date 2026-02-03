@@ -151,4 +151,35 @@ public class BiometricAuthController {
         dto.setStatus(user.getStatus());
         return dto;
     }
+    /**
+     * Get Dashboard data for HomeScreen (Name, Balance, Transactions)
+     * GET /api/auth/dashboard/{userId}
+     */
+    @GetMapping("/dashboard/{userId}")
+    public ResponseEntity<?> getDashboardData(@PathVariable Long userId) {
+        log.info("Fetching dashboard data for user ID: {}", userId);
+        try {
+            // 1. Fetch User Profile and Balance from the View provided in your SQL dump
+            String userSql = "SELECT name, wallet_balance, currency FROM vw_users_wallet WHERE user_id = ?";
+            java.util.Map<String, Object> userData = jdbcTemplate.queryForMap(userSql, userId);
+
+            // 2. Fetch Recent Transactions for this user
+            String transSql = "SELECT transaction_id as id, amount, type as transactionType, " +
+                    "description, created_at as createdAt FROM transactions " +
+                    "WHERE user_id = ? ORDER BY created_at DESC LIMIT 5";
+            java.util.List<java.util.Map<String, Object>> transactions = jdbcTemplate.queryForList(transSql, userId);
+
+            // Create response object
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("user", userData);
+            response.put("transactions", transactions);
+
+            return ResponseEntity.ok(response);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (Exception e) {
+            log.error("Dashboard error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
 }
