@@ -135,6 +135,31 @@ public class BiometricAuthController {
     /**
      * Convert User entity to UserDTO
      */
+
+    @PostMapping("/login")
+    public ResponseEntity<com.cognizant.smartpay.dto.LoginResponse> login(@Valid @RequestBody com.cognizant.smartpay.dto.LoginRequest request) {
+        log.info("Received login request for identifier: {}", request.getIdentifier());
+        try {
+            User user = biometricService.authenticateUsernamePassword(request);
+            log.info("reached after query");
+            UserDTO userDTO =convertToDTO(user);
+            log.info("DTO data {}", userDTO);
+            com.cognizant.smartpay.dto.LoginResponse response = com.cognizant.smartpay.dto.LoginResponse.builder()
+                    .message("Login successful")
+                    .user(userDTO)
+                    .build();
+            log.info("response {}", response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid email/mobile number: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Login Failed", e);
+            throw new RuntimeException("Login failed: " + e.getMessage());
+        }
+    }
+
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getUserId());
@@ -145,7 +170,7 @@ public class BiometricAuthController {
         // ------------------------------
         dto.setEmail(user.getEmail());
         dto.setPhone(user.getPhone());
-//        dto.setWalletBalance(user.getWalletBalance());
+//      dto.setWalletBalance(user.getWalletBalance());
         dto.setBiometricEnabled(user.getBiometricEnabled());
         dto.setEnabled(user.getEnabled());
         dto.setStatus(user.getStatus());

@@ -3,6 +3,7 @@ package com.cognizant.smartpay.service;
 import com.cognizant.smartpay.dto.EnrollmentRequest;
 import com.cognizant.smartpay.dto.EnrollmentResponse;
 import com.cognizant.smartpay.dto.FingerprintAuthRequest;
+import com.cognizant.smartpay.dto.LoginRequest;
 import com.cognizant.smartpay.entity.Biometric;
 import com.cognizant.smartpay.entity.User;
 import com.cognizant.smartpay.exception.AuthenticationFailedException;
@@ -444,5 +445,21 @@ public class BiometricService {
         } catch (Exception e) {
             log.error("Failed to create wallet for user: {}", userId, e);
         }
+    }
+//Added for login
+    public User authenticateUsernamePassword(LoginRequest request) {
+        String identifier = request.getIdentifier().trim();
+        log.info("Reached Biometric service");
+        String rawPassword = request.getPassword();
+        log.info("user password: {}", request.getPassword());
+        User user = userRepository.findByIdentifierAndPassword(identifier, rawPassword)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email/phone or password"));
+        log.info("reached after query: {}", user);
+        if (Boolean.FALSE.equals(user.getEnabled())) {
+            throw new IllegalStateException("User account is disabled");
+        }
+        // Optional: check status/biometric flags if needed
+
+        return user;
     }
 }
