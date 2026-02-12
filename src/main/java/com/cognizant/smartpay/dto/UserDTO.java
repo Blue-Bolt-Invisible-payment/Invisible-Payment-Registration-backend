@@ -18,8 +18,11 @@ public class UserDTO {
     private String name;
     private String email;
     private String phone;
-    private BigDecimal walletBalance;
+    private String lastName;
+    private String dob;
+//    private BigDecimal walletBalance;
     private Boolean biometricEnabled;
     private Boolean enabled;
     private String status;
+    private String loginStatus;
 }

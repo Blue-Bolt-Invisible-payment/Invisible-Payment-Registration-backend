@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3001")
+@CrossOrigin(origins = "http://localhost:8081")
 
 @RequiredArgsConstructor
 //@Slf4j
@@ -83,9 +83,13 @@ public class BiometricAuthController {
             com.cognizant.smartpay.dto.RegistrationResponse response = com.cognizant.smartpay.dto.RegistrationResponse.builder()
                     .userId(user.getUserId())
                     .name(user.getName())
+                    // --- ADDED NEW FIELDS HERE ---
+                    .lastName(user.getLastName())
+                    .dob(user.getDob())
+                    // ------------------------------
                     .email(user.getEmail())
                     .phone(user.getPhone())
-                    .walletBalance(user.getWalletBalance())
+//                    .walletBalance(user.getWalletBalance())
                     .biometricEnabled(user.getBiometricEnabled())
                     .status(user.getStatus())
                     .message("User registered successfully")
@@ -131,16 +135,76 @@ public class BiometricAuthController {
     /**
      * Convert User entity to UserDTO
      */
+
+    @PostMapping("/login")
+    public ResponseEntity<com.cognizant.smartpay.dto.LoginResponse> login(@Valid @RequestBody com.cognizant.smartpay.dto.LoginRequest request) {
+        log.info("Received login request for identifier: {}", request.getIdentifier());
+        try {
+            User user = biometricService.authenticateUsernamePassword(request);
+            log.info("reached after query");
+            UserDTO userDTO =convertToDTO(user);
+            log.info("DTO data {}", userDTO);
+            com.cognizant.smartpay.dto.LoginResponse response = com.cognizant.smartpay.dto.LoginResponse.builder()
+                    .message("Login successful")
+                    .user(userDTO)
+                    .build();
+            log.info("response {}", response);
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid email/mobile number: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Login Failed", e);
+            throw new RuntimeException("Login failed: " + e.getMessage());
+        }
+    }
+
     private UserDTO convertToDTO(User user) {
         UserDTO dto = new UserDTO();
         dto.setId(user.getUserId());
         dto.setName(user.getName());
+        // --- ADDED NEW FIELDS HERE ---
+        dto.setLastName(user.getLastName());
+        dto.setDob(user.getDob());
+        // ------------------------------
         dto.setEmail(user.getEmail());
         dto.setPhone(user.getPhone());
-        dto.setWalletBalance(user.getWalletBalance());
+//      dto.setWalletBalance(user.getWalletBalance());
         dto.setBiometricEnabled(user.getBiometricEnabled());
         dto.setEnabled(user.getEnabled());
         dto.setStatus(user.getStatus());
         return dto;
+    }
+    /**
+     * Get Dashboard data for HomeScreen (Name, Balance, Transactions)
+     * GET /api/auth/dashboard/{userId}
+     */
+    @GetMapping("/dashboard/{userId}")
+    public ResponseEntity<?> getDashboardData(@PathVariable Long userId) {
+        log.info("Fetching dashboard data for user ID: {}", userId);
+        try {
+            // 1. Fetch User Profile and Balance from the View provided in your SQL dump
+            String userSql = "SELECT name, wallet_balance, currency FROM vw_users_wallet WHERE user_id = ?";
+            java.util.Map<String, Object> userData = jdbcTemplate.queryForMap(userSql, userId);
+
+            // 2. Fetch Recent Transactions for this user
+            String transSql = "SELECT transaction_id as id, amount, type as transactionType, " +
+                    "description, created_at as createdAt FROM transactions " +
+                    "WHERE user_id = ? ORDER BY created_at DESC LIMIT 5";
+            java.util.List<java.util.Map<String, Object>> transactions = jdbcTemplate.queryForList(transSql, userId);
+
+            // Create response object
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("user", userData);
+            response.put("transactions", transactions);
+
+            return ResponseEntity.ok(response);
+        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (Exception e) {
+            log.error("Dashboard error", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
     }
 }
