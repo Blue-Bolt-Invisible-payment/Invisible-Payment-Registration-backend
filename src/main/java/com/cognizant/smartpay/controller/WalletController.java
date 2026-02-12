@@ -24,7 +24,7 @@ import java.util.*;
 @RequestMapping("/api/wallet")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "http://localhost:8081")
 public class WalletController {
 
     private final BiometricService biometricService;
@@ -103,6 +103,7 @@ public class WalletController {
             // ✅ ensure wallet exists with balance default 0
             Wallet wallet = addwalletService.getOrCreateWallet(userId);
             BigDecimal bal = wallet.getBalance() == null ? BigDecimal.ZERO : wallet.getBalance();
+            System.out.println("------------------------"+wallet.getBalance());
 
             // ✅ fetch user name
             String name = userRepository.findById(userId)

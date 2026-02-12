@@ -46,4 +46,5 @@ public class RegistrationRequest {
     
     @NotBlank(message = "Enrollment timestamp is required")
     private String enrolledAt;
+
 }

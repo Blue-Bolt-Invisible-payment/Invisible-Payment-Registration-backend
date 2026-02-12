@@ -24,4 +24,5 @@ public class UserDTO {
     private Boolean biometricEnabled;
     private Boolean enabled;
     private String status;
+    private String loginStatus;
 }

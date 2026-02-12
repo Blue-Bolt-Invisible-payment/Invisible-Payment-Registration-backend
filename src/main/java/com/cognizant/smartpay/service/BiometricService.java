@@ -325,6 +325,8 @@ public class BiometricService {
         user.setStatus("ACTIVE");
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
+        user.setLoginStatus("Y");
+//        System.out.println("------------"+user.setLoginStatus("Y"));
 
         user = userRepository.save(user);
         log.info("User created with ID: {}", user.getUserId());
