@@ -36,4 +36,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * Check if phone number exists
      */
     boolean existsByPhone(String phone);
+
+    /**
+     * Find user by email specifically for authentication verification
+     */
+    Optional<User> findByEmailAndStatus(String email, String status);
+// Newly added for login part...
+
+    Optional<User> findByEmailIgnoreCaseAndPassword(String email, String password);
+
+    Optional<User> findByPhoneAndPassword(String phone, String password);
+
+    default Optional<User> findByIdentifierAndPassword(String identifier, String password) {
+        boolean looksLikePhone = identifier.matches("^\\+?\\d{10,15}$");
+        if (looksLikePhone) {
+            return findByPhoneAndPassword(identifier, password);
+        }
+        return findByEmailIgnoreCaseAndPassword(identifier, password);
+    }
 }

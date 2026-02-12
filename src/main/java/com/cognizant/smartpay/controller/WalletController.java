@@ -24,7 +24,7 @@ import java.util.*;
 @RequestMapping("/api/wallet")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "http://localhost:8081")
+@CrossOrigin(origins = "*")
 public class WalletController {
 
     private final BiometricService biometricService;

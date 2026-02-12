@@ -448,7 +448,7 @@ public class BiometricService {
             log.error("Failed to create wallet for user: {}", userId, e);
         }
     }
-//Added for login
+    //Added for login
     public User authenticateUsernamePassword(LoginRequest request) {
         String identifier = request.getIdentifier().trim();
         log.info("Reached Biometric service");
