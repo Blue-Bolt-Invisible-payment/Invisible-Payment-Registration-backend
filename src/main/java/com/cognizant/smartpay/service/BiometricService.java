@@ -464,4 +464,13 @@ public class BiometricService {
 
         return user;
     }
+
+    public boolean checkUserExists(String type, String value) {
+        if ("email".equalsIgnoreCase(type)) {
+            return userRepository.findByEmail(value).isPresent();
+        } else if ("mobile".equalsIgnoreCase(type)) {
+            return userRepository.findByPhone(value).isPresent();
+        }
+        return false;
+    }
 }
