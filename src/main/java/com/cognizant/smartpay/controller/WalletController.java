@@ -8,9 +8,9 @@ import com.cognizant.smartpay.exception.AuthenticationFailedException;
 import com.cognizant.smartpay.exception.BiometricNotFoundException;
 import com.cognizant.smartpay.repository.UserRepository;
 import com.cognizant.smartpay.repository.WalletTransactionRepository;
-//import com.cognizant.smartpay.service.AddWalletService;
 import com.cognizant.smartpay.service.AddWalletService;
 import com.cognizant.smartpay.service.BiometricService;
+import com.cognizant.smartpay.service.TransactionLookupService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -33,6 +33,16 @@ public class WalletController {
 
     // ✅ NEW: to get user name for /balance response
     private final UserRepository userRepository;
+
+    // ✅ NEW: to read the latest purchase from `transactions`
+    private final TransactionLookupService transactionLookupService;
+
+
+    @GetMapping("/__ping")
+    public Map<String, Object> ping() {
+        return Map.of("ok", true, "ts", System.currentTimeMillis());
+    }
+
 
     @GetMapping("/credentials")
     public ResponseEntity<?> getActiveCredentials() {
@@ -103,7 +113,6 @@ public class WalletController {
             // ✅ ensure wallet exists with balance default 0
             Wallet wallet = addwalletService.getOrCreateWallet(userId);
             BigDecimal bal = wallet.getBalance() == null ? BigDecimal.ZERO : wallet.getBalance();
-            System.out.println("------------------------"+wallet.getBalance());
 
             // ✅ fetch user name
             String name = userRepository.findById(userId)
@@ -115,9 +124,8 @@ public class WalletController {
             response.put("user_id", userId);
             response.put("name", name);
 
-            // ✅ IMPORTANT: HomeScreen expects wallet_balance
+            // ✅ HomeScreen expects wallet_balance
             response.put("wallet_balance", bal);
-
             response.put("currency", wallet.getCurrency() == null ? "INR" : wallet.getCurrency());
 
             return ResponseEntity.ok(response);
@@ -208,6 +216,44 @@ public class WalletController {
     @PostMapping("/{userId}/add-money")
     public ResponseEntity<?> addMoney(@PathVariable Long userId, @RequestBody Map<String, Object> request) {
         return fundWallet(userId, request);
+    }
+
+    // ------------------------------------------------------------
+    // ✅ Latest purchase from `transactions` for this user
+    // Always returns TOTAL (incl. tax) under "amount".
+    // ------------------------------------------------------------
+    @GetMapping("/{userId}/last-purchase")
+    public ResponseEntity<?> getLastPurchase(@PathVariable Long userId) {
+        try {
+            return transactionLookupService.latestSuccessfulForUser(userId)
+                    .<ResponseEntity<?>>map(dto -> {
+                        Map<String, Object> tx = new HashMap<>();
+                        tx.put("id", dto.getTransactionId());
+                        tx.put("reference", dto.getTransactionReference());
+                        tx.put("name", "Cognizant");                    // left label
+
+                        // ✅ Show TOTAL (incl. tax) to the app
+                        tx.put("amount", dto.getTotalAmount());
+
+                        // ✅ Extra fields (optional UI breakdown)
+                        tx.put("tax", dto.getTaxAmount());
+                        tx.put("totalAmount", dto.getTotalAmount());
+                        tx.put("finalAmount", dto.getFinalAmount());     // original stored final (if any)
+
+                        tx.put("type", "DEBIT");                         // purchase = debit from wallet
+                        tx.put("date", dto.getTransactionDate());
+
+                        Map<String, Object> res = new HashMap<>();
+                        res.put("success", true);
+                        res.put("transaction", tx);
+                        return ResponseEntity.ok(res);
+                    })
+                    .orElseGet(() -> ResponseEntity.ok(Map.of("success", true, "transaction", null)));
+        } catch (Exception e) {
+            log.error("Error getting last purchase", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse(e.getMessage()));
+        }
     }
 
     private Map<String, Object> createErrorResponse(String message) {
